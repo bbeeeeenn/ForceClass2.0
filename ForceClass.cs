@@ -2,6 +2,7 @@
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
+using TShockAPI.DB;
 using TShockAPI.Hooks;
 
 namespace ForceClass
@@ -40,9 +41,28 @@ namespace ForceClass
 
         public override void Initialize()
         {
+            InitializeDatabase();
             Config = Config.Load();
             GeneralHooks.ReloadEvent += OnReload;
+            PlayerHooks.PlayerPostLogin += OnPlayerLogin;
         }
+
+        #region Initialize Database
+        public static void InitializeDatabase()
+        {
+            TShock.DB.Query(
+                @"
+                    CREATE TABLE IF NOT EXISTS PlayerClass (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        World INTEGER NOT NULL,
+                        Username TEXT NOT NULL,
+                        Primary TEXT DEFAULT None,
+                        Secondary TEXT DEFAULT None
+                    )
+                "
+            );
+        }
+        #endregion
 
         #region Reloading config
         private void OnReload(ReloadEventArgs e)
@@ -105,6 +125,13 @@ namespace ForceClass
             }
 
             Config = NewConfig;
+        }
+        #endregion
+
+        #region  Player join
+        private void OnPlayerLogin(PlayerPostLoginEventArgs args)
+        {
+            TSPlayer player = args.Player;
         }
         #endregion
     }
