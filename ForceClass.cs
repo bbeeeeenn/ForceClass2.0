@@ -20,6 +20,7 @@ namespace ForceClass
             "RANGER",
             "MAGE",
             "SUMMONER",
+            "SUPREME",
         };
 
         public static readonly string ConfigPath = "tshock/ForceClass.json";
@@ -39,10 +40,11 @@ namespace ForceClass
 
         public override void Initialize()
         {
-            LoadConfig();
+            Config = Config.Load();
             GeneralHooks.ReloadEvent += OnReload;
         }
 
+        #region Reloading config
         private void OnReload(ReloadEventArgs e)
         {
             LoadConfig();
@@ -51,7 +53,7 @@ namespace ForceClass
         public static void LoadConfig()
         {
             Config NewConfig = Config.Load();
-            if (!Classes.Contains(NewConfig.ClassAll))
+            if (!Classes.Contains(NewConfig.ClassAll.ToUpper()))
             {
                 NewConfig.ClassAll = "WARRIOR";
                 TShock.Log.ConsoleError(
@@ -65,19 +67,23 @@ namespace ForceClass
                     $"ForceClass has been {(NewConfig.Enabled ? "ENABLED" : "DISABLED. Players are now free to use any weapon")}.",
                     Color.LightCyan
                 );
-                if (NewConfig.SameAll)
+
+                if (NewConfig.Enabled)
                 {
-                    TShock.Utils.Broadcast(
-                        $"Players are now forced to be '{NewConfig.ClassAll}'.",
-                        Color.LightCyan
-                    );
-                }
-                else
-                {
-                    TShock.Utils.Broadcast(
-                        "Players are now forced to choose a class.",
-                        Color.LightCyan
-                    );
+                    if (NewConfig.SameAll)
+                    {
+                        TShock.Utils.Broadcast(
+                            $"Players are now forced to be '{NewConfig.ClassAll}'.",
+                            Color.LightCyan
+                        );
+                    }
+                    else
+                    {
+                        TShock.Utils.Broadcast(
+                            "Players are now forced to choose a class.",
+                            Color.LightCyan
+                        );
+                    }
                 }
             }
             if (
@@ -100,5 +106,6 @@ namespace ForceClass
 
             Config = NewConfig;
         }
+        #endregion
     }
 }
