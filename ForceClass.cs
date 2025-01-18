@@ -1,5 +1,4 @@
-﻿using IL.Terraria.GameContent.ObjectInteractions;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using TerrariaApi.Server;
