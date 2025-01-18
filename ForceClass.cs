@@ -66,13 +66,13 @@ namespace ForceClass
         {
             TShock.DB.Query(
                 @"
-                    CREATE TABLE IF NOT EXISTS PlayerClass (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        World INTEGER NOT NULL,
-                        Username TEXT NOT NULL,
-                        Primary TEXT DEFAULT None,
-                        Secondary TEXT DEFAULT None
-                    )
+                CREATE TABLE IF NOT EXISTS PlayerClass (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    World INTEGER NOT NULL,
+                    Username TEXT NOT NULL,
+                    PrimaryClass TEXT DEFAULT 'None',
+                    SecondaryClass TEXT DEFAULT 'None'
+                )
                 "
             );
         }
@@ -155,12 +155,6 @@ namespace ForceClass
             if (player == null)
                 return;
 
-            if (player.Group.HasPermission("tshock.godmode"))
-            {
-                PlayerClasses[player.Account.Name] = new List<string>() { "SUPREME", "SUPREME" };
-                return;
-            }
-
             using QueryResult result = TShock.DB.QueryReader(
                 @"
                     SELECT * FROM PlayerClass
@@ -171,12 +165,29 @@ namespace ForceClass
             );
             if (result.Read())
             {
-                string Primary = result.Reader.Get<string>("Primary");
-                string Secondary = result.Reader.Get<string>("Secondary");
+                string Primary = result.Reader.Get<string>("PrimaryClass");
+                string Secondary = result.Reader.Get<string>("SecondaryClass");
                 PlayerClasses[player.Account.Name] = new List<string>() { Primary, Secondary };
             }
             else
             {
+                if (player.Group.HasPermission("tshock.godmode"))
+                {
+                    TShock.DB.Query(
+                        @"
+                        INSERT INTO PlayerClass (World, Username, PrimaryClass, SecondaryClass)
+                        VALUES (@0, @1, 'SUPREME', 'SUPREME')
+                        ",
+                        Main.worldID,
+                        player.Account.Name
+                    );
+                    PlayerClasses[player.Account.Name] = new List<string>()
+                    {
+                        "SUPREME",
+                        "SUPREME",
+                    };
+                    return;
+                }
                 TShock.DB.Query(
                     @"
                         INSERT INTO PlayerClass (World, Username)
@@ -213,20 +224,34 @@ namespace ForceClass
             // Send all playerclasses
             {
                 List<string> strings = new() { "-- Player Classes --" };
-                foreach (TSPlayer p in TShock.Players)
+                foreach (string name in PlayerClasses.Keys)
                 {
-                    strings.Add(
-                        $"{p.Name} Primary:{PlayerClasses[p.Account.Name][0]} Secondary:{PlayerClasses[p.Account.Name][1]}"
-                    );
+                    strings.Add($"{name} - [{PlayerClasses[name][0]}][{PlayerClasses[name][1]}]");
                 }
                 player.SendMessage(string.Join("\n", strings), Color.LightCyan);
                 return;
             }
-
             if (args.Parameters.Count <= 1)
+            // Send example usage
             {
-                player.SendMessage("", Color.LightCyan);
+                player.SendMessage(
+                    "Example usage:\n/class get warrior\n/class get ranger\n/class get mage\n/class get summoner",
+                    Color.LightCyan
+                );
+                return;
             }
+            if (!Classes.Contains(args.Parameters[1].ToUpper()))
+            // Send valid classes
+            {
+                player.SendErrorMessage(
+                    $"Invalid input '{args.Parameters[1]}'\nAvailable classes:\n- warrior\n- ranger\n- mage\n- summoner"
+                );
+                return;
+            }
+
+            // player.SendSuccessMessage(
+            //     $"Success\nPlayername: {player.Name}\nAccountName: {player.Account.Name}\nPrimary: {PlayerClasses[player.Account.Name][0]}\nSecondary: {PlayerClasses[player.Account.Name][1]}"
+            // );
         }
         #endregion
     }
