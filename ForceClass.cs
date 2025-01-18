@@ -1,6 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
+﻿using IL.Terraria.GameContent.ObjectInteractions;
+using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.ID;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.DB;
@@ -56,7 +57,9 @@ namespace ForceClass
         {
             if (disposing)
             {
+                ServerApi.Hooks.GameInitialize.Deregister(this, OnGameInitialize);
                 GeneralHooks.ReloadEvent -= OnReload;
+                PlayerHooks.PlayerPostLogin -= OnPlayerLogin;
             }
             base.Dispose(disposing);
         }
@@ -68,6 +71,7 @@ namespace ForceClass
             ServerApi.Hooks.GameInitialize.Register(this, OnGameInitialize);
             GeneralHooks.ReloadEvent += OnReload;
             PlayerHooks.PlayerPostLogin += OnPlayerLogin;
+            ServerApi.Hooks.NetGetData.Register(this, OnGetData);
         }
 
         #region Initialize Database
@@ -173,6 +177,10 @@ namespace ForceClass
             TSPlayer player = args.Player;
             if (player == null || !player.Active)
                 return;
+            if (!Config.Enabled)
+                player.SendInfoMessage("Currently disabled.");
+            if (!player.IsLoggedIn)
+                player.SendErrorMessage("You must login first!");
 
             if (
                 args.Parameters.Count == 0
@@ -192,8 +200,11 @@ namespace ForceClass
                 List<string> strings = new() { "-- Player Classes --" };
                 foreach (string name in PlayerClasses.Keys)
                 {
+                    string isOnline =
+                        TShock.Players.FirstOrDefault(player => player.Account.Name == name)?.Name
+                        ?? "";
                     strings.Add(
-                        $"{name} - [{ClassColors[PlayerClasses[name][0]]}][{ClassColors[PlayerClasses[name][1]]}]"
+                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{ClassColors[PlayerClasses[name][0]]}][{ClassColors[PlayerClasses[name][1]]}]"
                     );
                 }
                 player.SendMessage(string.Join("\n", strings), Color.LightCyan);
@@ -282,6 +293,169 @@ namespace ForceClass
                 return;
             }
             player.SendErrorMessage("You already have 2 classes.");
+        }
+        #endregion
+
+        #region Restrict Actions
+        private readonly Dictionary<string, DateTime> LastMessageSent = new();
+        static readonly short[] MinionProjectiles =
+        {
+            ProjectileID.AbigailCounter,
+            ProjectileID.AbigailMinion,
+            ProjectileID.BabyBird,
+            ProjectileID.FlinxMinion,
+            ProjectileID.BabySlime,
+            ProjectileID.VampireFrog,
+            ProjectileID.Hornet,
+            ProjectileID.FlyingImp,
+            ProjectileID.VenomSpider,
+            ProjectileID.JumperSpider,
+            ProjectileID.DangerousSpider,
+            ProjectileID.BatOfLight,
+            ProjectileID.OneEyedPirate,
+            ProjectileID.SoulscourgePirate,
+            ProjectileID.PirateCaptain,
+            ProjectileID.Smolstar,
+            ProjectileID.Retanimini,
+            ProjectileID.Spazmamini,
+            ProjectileID.Pygmy,
+            ProjectileID.Pygmy2,
+            ProjectileID.Pygmy3,
+            ProjectileID.Pygmy4,
+            ProjectileID.StormTigerGem,
+            ProjectileID.StormTigerTier1,
+            ProjectileID.StormTigerTier2,
+            ProjectileID.StormTigerTier3,
+            ProjectileID.DeadlySphere,
+            ProjectileID.Raven,
+            ProjectileID.UFOMinion,
+            ProjectileID.Tempest,
+            ProjectileID.StardustDragon1,
+            ProjectileID.StardustDragon2,
+            ProjectileID.StardustDragon3,
+            ProjectileID.StardustDragon4,
+            ProjectileID.StardustCellMinion,
+            ProjectileID.EmpressBlade,
+        };
+
+        private void OnGetData(GetDataEventArgs args)
+        {
+            if (!Config.Enabled)
+                return;
+            TSPlayer player = TShock.Players[args.Msg.whoAmI];
+            if (player == null || !player.Active || !player.IsLoggedIn)
+                return;
+
+            switch (args.MsgID)
+            {
+                // Prevent minion summon
+                case PacketTypes.ProjectileNew:
+                    if (!PlayerClasses[player.Account.Name].Contains("SUMMONER"))
+                        PreventMinion(args, player);
+                    break;
+
+                case PacketTypes.NpcStrike:
+                    if (!PlayerClasses[player.Account.Name].Contains("SUPREME"))
+                        OnNpcStrike(args, player);
+                    break;
+            }
+        }
+
+        private void PreventMinion(GetDataEventArgs args, TSPlayer player)
+        {
+            if (PlayerClasses[player.Account.Name].Contains("SUPREME"))
+                return;
+
+            using BinaryReader reader = new(
+                new MemoryStream(args.Msg.readBuffer, args.Index, args.Length)
+            );
+
+            var projectileId = reader.ReadInt16();
+            _ = reader.ReadSingle();
+            _ = reader.ReadSingle();
+            _ = reader.ReadSingle();
+            _ = reader.ReadSingle();
+            var ownerId = reader.ReadByte();
+            var type = reader.ReadInt16();
+
+            if (MinionProjectiles.Contains(type))
+            {
+                player.SendData(PacketTypes.ProjectileDestroy, "", projectileId, ownerId);
+                SendMessage(
+                    player,
+                    "You have to be a SUMMONER to do that! Type '/class' for more info.",
+                    Color.Red
+                );
+                args.Handled = true;
+            }
+        }
+
+        private void OnNpcStrike(GetDataEventArgs args, TSPlayer player)
+        {
+            // Return if just using non weapon tools
+            List<string> classes = PlayerClasses[player.Account.Name];
+            Item selecteditem = player.SelectedItem;
+            if (
+                selecteditem.pick > 0
+                || selecteditem.axe > 0
+                || selecteditem.hammer > 0
+                || selecteditem.damage <= 0
+            )
+                return;
+
+            // Whether to punish the player if wrong weapon is used
+            bool Punish = false;
+
+            if (
+                (selecteditem.melee && !classes.Contains("WARRIOR"))
+                || (selecteditem.ranged && !classes.Contains("RANGER"))
+                || (selecteditem.magic && !classes.Contains("MAGE"))
+                || (selecteditem.summon && !classes.Contains("SUMMONER"))
+            )
+                Punish = true;
+
+            if (Punish)
+            {
+                args.Handled = true;
+
+                if (classes[0] == "NONE")
+                {
+                    SendMessage(
+                        player,
+                        "You haven't chosen a primary class yet! Type '/class' for more info.",
+                        Color.Red
+                    );
+                }
+                else if (classes[1] == "NONE")
+                {
+                    SendMessage(
+                        player,
+                        $"You haven't chosen a secondary class yet! Type '/class get' for more info.",
+                        Color.Red
+                    );
+                }
+                else
+                {
+                    SendMessage(
+                        player,
+                        $"You can't use this weapon as [{ClassColors[classes[0]]}][{ClassColors[classes[1]]}]",
+                        Color.Red
+                    );
+                }
+            }
+        }
+
+        private void SendMessage(TSPlayer player, string message, Color color)
+        {
+            if (
+                !LastMessageSent.ContainsKey(player.Name)
+                || (DateTime.Now - LastMessageSent[player.Name]).Seconds
+                    >= Config.ErrorMessageInterval
+            )
+            {
+                LastMessageSent[player.Name] = DateTime.Now;
+                player.SendMessage(message, color);
+            }
         }
         #endregion
     }
