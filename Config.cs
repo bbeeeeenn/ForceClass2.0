@@ -6,8 +6,6 @@ namespace ForceClass;
 public class Config
 {
     public bool Enabled = true;
-    public bool SameAll = false;
-    public string ClassAll = "WARRIOR";
     public int ErrorMessageInterval = 5;
 
     public Config Load()

@@ -29,7 +29,7 @@ namespace ForceClass
             "   [c/1ee3b2:RANGER] - for Bows, Guns, and Throwables.",
             "   [c/aa1cbd:MAGE] - for Magic weapons.",
             "   [c/328adb:SUMMONER] - for Whips and Summon weapons.",
-            "   [c/328adb:SUPREME] - VIP Exclusive; Freely uses anything.",
+            "   [c/fbff00:SUPREME] - VIP Exclusive; Freely uses anything.",
         };
         public static readonly List<string> Classes = new()
         {
@@ -38,6 +38,14 @@ namespace ForceClass
             "MAGE",
             "SUMMONER",
             "SUPREME",
+        };
+        public readonly Dictionary<string, string> ClassColors = new()
+        {
+            { "WARRIOR", "[c/de881f:WARRIOR]" },
+            { "RANGER", "[c/1ee3b2:RANGER]" },
+            { "MAGE", "[c/1ee3b2:RANGER]" },
+            { "SUMMONER", "[c/328adb:SUMMONER]" },
+            { "SUPREME", "[c/fbff00:SUPREME]" },
         };
 
         public static readonly string ConfigPath = "tshock/ForceClass.json";
@@ -91,57 +99,14 @@ namespace ForceClass
         public static void LoadConfig()
         {
             Config NewConfig = Config.Load();
-            if (!Classes.Contains(NewConfig.ClassAll.ToUpper()))
-            {
-                NewConfig.ClassAll = "WARRIOR";
-                TShock.Log.ConsoleError(
-                    "There is a typo in the config 'ClassAll' property. It is now temporarily set to 'WARRIOR'."
-                );
-            }
 
             if (Config.Enabled != NewConfig.Enabled)
             {
                 TShock.Utils.Broadcast(
-                    $"ForceClass has been {(NewConfig.Enabled ? "ENABLED" : "DISABLED. Players are now free to use any weapon")}.",
+                    $"ForceClass has been {(NewConfig.Enabled ? "ENABLED. Players are now required to choose their classes." : "DISABLED. Players are now free to use any weapon.")}",
                     Color.LightCyan
                 );
-
-                if (NewConfig.Enabled)
-                {
-                    if (NewConfig.SameAll)
-                    {
-                        TShock.Utils.Broadcast(
-                            $"Players are now forced to be '{NewConfig.ClassAll}'.",
-                            Color.LightCyan
-                        );
-                    }
-                    else
-                    {
-                        TShock.Utils.Broadcast(
-                            "Players are now forced to choose a class.",
-                            Color.LightCyan
-                        );
-                    }
-                }
             }
-            if (
-                (Config.SameAll != NewConfig.SameAll || Config.ClassAll != NewConfig.ClassAll)
-                && Config.Enabled == NewConfig.Enabled
-            )
-            {
-                if (NewConfig.SameAll)
-                {
-                    TShock.Utils.Broadcast(
-                        $"Players are now forced to be '{NewConfig.ClassAll}'.",
-                        Color.LightCyan
-                    );
-                }
-                else
-                {
-                    TShock.Utils.Broadcast("Players are now on their own class.", Color.LightCyan);
-                }
-            }
-
             Config = NewConfig;
         }
         #endregion
@@ -226,7 +191,9 @@ namespace ForceClass
                 List<string> strings = new() { "-- Player Classes --" };
                 foreach (string name in PlayerClasses.Keys)
                 {
-                    strings.Add($"{name} - [{PlayerClasses[name][0]}][{PlayerClasses[name][1]}]");
+                    strings.Add(
+                        $"{name} - [{ClassColors[PlayerClasses[name][0]]}][{ClassColors[PlayerClasses[name][1]]}]"
+                    );
                 }
                 player.SendMessage(string.Join("\n", strings), Color.LightCyan);
                 return;
