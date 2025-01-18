@@ -80,7 +80,6 @@ namespace ForceClass
             TShock.DB.Query(
                 @"
                 CREATE TABLE IF NOT EXISTS PlayerClass (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     World INTEGER NOT NULL,
                     Username TEXT NOT NULL,
                     PrimaryClass TEXT DEFAULT 'NONE',
@@ -178,9 +177,15 @@ namespace ForceClass
             if (player == null || !player.Active)
                 return;
             if (!Config.Enabled)
+            {
                 player.SendInfoMessage("Currently disabled.");
+                return;
+            }
             if (!player.IsLoggedIn)
+            {
                 player.SendErrorMessage("You must login first!");
+                return;
+            }
 
             if (
                 args.Parameters.Count == 0
@@ -201,7 +206,7 @@ namespace ForceClass
                 foreach (string name in PlayerClasses.Keys)
                 {
                     string isOnline =
-                        TShock.Players.FirstOrDefault(player => player.Account.Name == name)?.Name
+                        TShock.Players.FirstOrDefault(player => player?.Account?.Name == name)?.Name
                         ?? "";
                     strings.Add(
                         $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{ClassColors[PlayerClasses[name][0]]}][{ClassColors[PlayerClasses[name][1]]}]"
@@ -417,6 +422,7 @@ namespace ForceClass
             if (Punish)
             {
                 args.Handled = true;
+                player.SetBuff(149, Config.PunishDuration * 60);
 
                 if (classes[0] == "NONE")
                 {

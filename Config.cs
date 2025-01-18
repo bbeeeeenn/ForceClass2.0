@@ -6,6 +6,7 @@ namespace ForceClass;
 public class Config
 {
     public bool Enabled = true;
+    public int PunishDuration = 2;
     public int ErrorMessageInterval = 5;
 
     public Config Load()
