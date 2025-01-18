@@ -70,8 +70,8 @@ namespace ForceClass
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     World INTEGER NOT NULL,
                     Username TEXT NOT NULL,
-                    PrimaryClass TEXT DEFAULT 'None',
-                    SecondaryClass TEXT DEFAULT 'None'
+                    PrimaryClass TEXT DEFAULT 'NONE',
+                    SecondaryClass TEXT DEFAULT 'NONE'
                 )
                 "
             );
@@ -249,9 +249,71 @@ namespace ForceClass
                 return;
             }
 
-            // player.SendSuccessMessage(
-            //     $"Success\nPlayername: {player.Name}\nAccountName: {player.Account.Name}\nPrimary: {PlayerClasses[player.Account.Name][0]}\nSecondary: {PlayerClasses[player.Account.Name][1]}"
-            // );
+            string classwanted = args.Parameters[1].ToUpper();
+            bool hasPrimary = true;
+            bool hasSecondary = true;
+
+            using (
+                QueryResult result = TShock.DB.QueryReader(
+                    @"
+                SELECT * FROM PlayerClass
+                WHERE World=@0 AND Username=@1
+                ",
+                    Main.worldID,
+                    player.Account.Name
+                )
+            )
+            {
+                if (result.Read())
+                {
+                    hasPrimary = result.Reader.Get<string>("PrimaryClass") != "NONE";
+                    hasSecondary = result.Reader.Get<string>("SecondaryClass") != "NONE";
+                }
+                else
+                {
+                    player.SendErrorMessage("Unsuccessful. Something went wrong.");
+                    return;
+                }
+            }
+
+            if (!hasPrimary)
+            {
+                TShock.DB.Query(
+                    @"
+                    UPDATE PlayerClass
+                    SET PrimaryClass=@0
+                    WHERE World=@1 AND Username=@2
+                    ",
+                    classwanted,
+                    Main.worldID,
+                    player.Account.Name
+                );
+                PlayerClasses[player.Account.Name][0] = classwanted;
+                player.SendSuccessMessage($"Successfully set Primary class to {classwanted}!");
+                return;
+            }
+            if (!hasSecondary)
+            {
+                if (classwanted == PlayerClasses[player.Account.Name][0])
+                {
+                    player.SendErrorMessage($"{classwanted} is already your primary class!");
+                    return;
+                }
+                TShock.DB.Query(
+                    @"
+                    UPDATE PlayerClass
+                    SET SecondaryClass=@0
+                    WHERE World=@1 AND Username=@2
+                    ",
+                    classwanted,
+                    Main.worldID,
+                    player.Account.Name
+                );
+                PlayerClasses[player.Account.Name][1] = classwanted;
+                player.SendSuccessMessage($"Successfully set Secondary class to {classwanted}!");
+                return;
+            }
+            player.SendErrorMessage("You already have 2 classes.");
         }
         #endregion
     }
