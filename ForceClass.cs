@@ -60,6 +60,7 @@ namespace ForceClass
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnGameInitialize);
                 GeneralHooks.ReloadEvent -= OnReload;
                 PlayerHooks.PlayerPostLogin -= OnPlayerLogin;
+                ServerApi.Hooks.NetGetData.Deregister(this, OnGetData);
             }
             base.Dispose(disposing);
         }
