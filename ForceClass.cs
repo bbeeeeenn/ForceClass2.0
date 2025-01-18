@@ -41,6 +41,7 @@ namespace ForceClass
         };
         public readonly Dictionary<string, string> ClassColors = new()
         {
+            { "NONE", "NONE" },
             { "WARRIOR", "[c/de881f:WARRIOR]" },
             { "RANGER", "[c/1ee3b2:RANGER]" },
             { "MAGE", "[c/1ee3b2:RANGER]" },
