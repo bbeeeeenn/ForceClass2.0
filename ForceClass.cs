@@ -183,7 +183,7 @@ namespace ForceClass
                         TShock.Players.FirstOrDefault(player => player?.Account?.Name == name)?.Name
                         ?? "";
                     strings.Add(
-                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{PlayerClasses[name][0]}][{PlayerClasses[name][1]}]"
+                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{PlayerClasses[name][0]}]{(PlayerClasses[name][0] == "SUPREME" ? "" : $"[{PlayerClasses[name][1]}]")}"
                     );
                 }
                 TShock.Log.ConsoleInfo(string.Join("\n", strings));
@@ -222,7 +222,7 @@ namespace ForceClass
                         TShock.Players.FirstOrDefault(player => player?.Account?.Name == name)?.Name
                         ?? "";
                     strings.Add(
-                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{ClassColors[PlayerClasses[name][0]]}][{ClassColors[PlayerClasses[name][1]]}]"
+                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{ClassColors[PlayerClasses[name][0]]}]{(PlayerClasses[name][0] == "SUPREME" ? "" : $"[{ClassColors[PlayerClasses[name][1]]}]")}"
                     );
                 }
                 player.SendMessage(string.Join("\n", strings), Color.LightCyan);
