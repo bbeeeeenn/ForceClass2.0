@@ -247,6 +247,11 @@ namespace ForceClass
             }
 
             string classwanted = args.Parameters[1].ToUpper();
+            if (classwanted == "SUPREME")
+            {
+                player.SendErrorMessage($"This class is unavailable to you.");
+                return;
+            }
             bool hasPrimary = true;
             bool hasSecondary = true;
 
