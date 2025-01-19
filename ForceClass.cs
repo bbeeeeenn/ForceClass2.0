@@ -91,7 +91,7 @@ namespace ForceClass
         #endregion
         private void OnGameInitialize(EventArgs args)
         {
-            Commands.ChatCommands.Add(new Command(OnCommand, "class") { AllowServer = false });
+            Commands.ChatCommands.Add(new Command(OnCommand, "class"));
         }
 
         #region Reloading config
@@ -175,7 +175,20 @@ namespace ForceClass
         {
             TSPlayer player = args.Player;
             if (player == null || !player.Active)
+            {
+                List<string> strings = new() { "Player Classes:" };
+                foreach (string name in PlayerClasses.Keys)
+                {
+                    string isOnline =
+                        TShock.Players.FirstOrDefault(player => player?.Account?.Name == name)?.Name
+                        ?? "";
+                    strings.Add(
+                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{PlayerClasses[name][0]}][{PlayerClasses[name][1]}]"
+                    );
+                }
+                TShock.Log.ConsoleInfo(string.Join("\n", strings));
                 return;
+            }
             if (!Config.Enabled)
             {
                 player.SendInfoMessage("Currently disabled.");
