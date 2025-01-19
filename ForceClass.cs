@@ -44,7 +44,7 @@ namespace ForceClass
             { "NONE", "NONE" },
             { "WARRIOR", "[c/de881f:WARRIOR]" },
             { "RANGER", "[c/1ee3b2:RANGER]" },
-            { "MAGE", "[c/1ee3b2:RANGER]" },
+            { "MAGE", "[c/aa1cbd:MAGE]" },
             { "SUMMONER", "[c/328adb:SUMMONER]" },
             { "SUPREME", "[c/fbff00:SUPREME]" },
         };
@@ -258,9 +258,9 @@ namespace ForceClass
             using (
                 QueryResult result = TShock.DB.QueryReader(
                     @"
-                SELECT * FROM PlayerClass
-                WHERE World=@0 AND Username=@1
-                ",
+                    SELECT * FROM PlayerClass
+                    WHERE World=@0 AND Username=@1
+                    ",
                     Main.worldID,
                     player.Account.Name
                 )
