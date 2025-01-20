@@ -41,12 +41,12 @@ namespace ForceClass
         };
         public readonly Dictionary<string, string> ClassColors = new()
         {
-            { "NONE", "NONE" },
-            { "WARRIOR", "[c/de881f:WARRIOR]" },
-            { "RANGER", "[c/1ee3b2:RANGER]" },
-            { "MAGE", "[c/aa1cbd:MAGE]" },
-            { "SUMMONER", "[c/328adb:SUMMONER]" },
-            { "SUPREME", "[c/fbff00:SUPREME]" },
+            { "NONE", "[c/ffffff:[NONE][c/ffffff:]]" },
+            { "WARRIOR", "[c/de881f:[WARRIOR][c/de881f:]]" },
+            { "RANGER", "[c/1ee3b2:[RANGER][c/1ee3b2:]]" },
+            { "MAGE", "[c/aa1cbd:[MAGE][c/aa1cbd:]]" },
+            { "SUMMONER", "[c/328adb:[SUMMONER][c/328adb:]]" },
+            { "SUPREME", "[c/fbff00:[SUPREME][c/fbff00:]]" },
         };
 
         public static readonly string ConfigPath = "tshock/ForceClass.json";
@@ -67,14 +67,14 @@ namespace ForceClass
         public override void Initialize()
         {
             InitializeDatabase();
-            Config = Config.Load();
+            Config = SanitizeConfig(Config.Load());
             ServerApi.Hooks.GameInitialize.Register(this, OnGameInitialize);
             GeneralHooks.ReloadEvent += OnReload;
             PlayerHooks.PlayerPostLogin += OnPlayerLogin;
             ServerApi.Hooks.NetGetData.Register(this, OnGetData);
         }
 
-        #region Initialize Database
+        #region Initialize
         public static void InitializeDatabase()
         {
             TShock.DB.Query(
@@ -88,30 +88,70 @@ namespace ForceClass
                 "
             );
         }
-        #endregion
+
         private void OnGameInitialize(EventArgs args)
         {
             Commands.ChatCommands.Add(new Command(OnCommand, "class"));
         }
+        #endregion
 
         #region Reloading config
         private void OnReload(ReloadEventArgs e)
         {
-            LoadConfig();
+            ReloadConfig();
         }
 
-        public static void LoadConfig()
+        public void ReloadConfig()
         {
-            Config NewConfig = Config.Load();
+            Config NewConfig = SanitizeConfig(Config.Load());
 
             if (Config.Enabled != NewConfig.Enabled)
             {
                 TShock.Utils.Broadcast(
-                    $"ForceClass has been {(NewConfig.Enabled ? "ENABLED. Players are now required to choose their classes." : "DISABLED. Players are now free to use any weapon.")}",
-                    Color.LightCyan
+                    $"ForceClass has been {(NewConfig.Enabled ? "ENABLED." : "DISABLED. Players are now free to use any weapon.")}",
+                    Color.Cyan
+                );
+            }
+            if (NewConfig.Enabled && Config.SameAll != NewConfig.SameAll)
+            {
+                if (NewConfig.SameAll)
+                {
+                    TShock.Utils.Broadcast(
+                        $"All players' classes are set to {ClassColors[Config.PrimaryClass.ToUpper()]}{ClassColors[Config.SecondaryClass.ToUpper()]}!",
+                        Color.Cyan
+                    );
+                }
+                else
+                {
+                    TShock.Utils.Broadcast($"Players are now in their own classes!", Color.Cyan);
+                }
+            }
+            if (
+                NewConfig.Enabled
+                && NewConfig.SameAll
+                && (
+                    Config.PrimaryClass != NewConfig.PrimaryClass
+                    || Config.SecondaryClass != NewConfig.SecondaryClass
+                )
+            )
+            {
+                TShock.Utils.Broadcast(
+                    $"All players' classes are changed to {ClassColors[NewConfig.PrimaryClass]}{ClassColors[NewConfig.SecondaryClass]}!",
+                    Color.Cyan
                 );
             }
             Config = NewConfig;
+        }
+
+        public static Config SanitizeConfig(Config config)
+        {
+            config.PrimaryClass = Classes.Contains(config.PrimaryClass.ToUpper())
+                ? config.PrimaryClass.ToUpper()
+                : "WARRIOR";
+            config.SecondaryClass = Classes.Contains(config.SecondaryClass.ToUpper())
+                ? config.SecondaryClass.ToUpper()
+                : "NONE";
+            return config;
         }
         #endregion
 
@@ -175,6 +215,7 @@ namespace ForceClass
         {
             TSPlayer player = args.Player;
             if (player == null || !player.Active)
+            // For the Console
             {
                 List<string> strings = new() { "Player Classes:" };
                 foreach (string name in PlayerClasses.Keys)
@@ -194,6 +235,19 @@ namespace ForceClass
                 player.SendInfoMessage("Currently disabled.");
                 return;
             }
+            if (Config.SameAll)
+            {
+                player.SendMessage(
+                    $"All players are force to be {ClassColors[Config.PrimaryClass]}{ClassColors[Config.SecondaryClass]}!",
+                    Color.Cyan
+                );
+                if (PlayerClasses[player.Account.Name].Contains("SUPREME"))
+                    player.SendMessage(
+                        $"You are a {ClassColors["SUPREME"]}, so you are exempt from this.",
+                        Color.Cyan
+                    );
+                return;
+            }
             if (!player.IsLoggedIn)
             {
                 player.SendErrorMessage("You must login first!");
@@ -209,7 +263,7 @@ namespace ForceClass
             )
             // Send Instructions
             {
-                player.SendMessage(string.Join("\n", CommandInstructions), Color.LightCyan);
+                player.SendMessage(string.Join("\n", CommandInstructions), Color.Cyan);
                 return;
             }
             if (args.Parameters[0].ToLower() == "all")
@@ -222,10 +276,10 @@ namespace ForceClass
                         TShock.Players.FirstOrDefault(player => player?.Account?.Name == name)?.Name
                         ?? "";
                     strings.Add(
-                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{ClassColors[PlayerClasses[name][0]]}]{(PlayerClasses[name][0] == "SUPREME" ? "" : $"[{ClassColors[PlayerClasses[name][1]]}]")}"
+                        $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - {ClassColors[PlayerClasses[name][0]]}{(PlayerClasses[name][0] == "SUPREME" ? "" : $"{ClassColors[PlayerClasses[name][1]]}")}"
                     );
                 }
-                player.SendMessage(string.Join("\n", strings), Color.LightCyan);
+                player.SendMessage(string.Join("\n", strings), Color.Cyan);
                 return;
             }
             if (args.Parameters.Count <= 1)
@@ -233,7 +287,7 @@ namespace ForceClass
             {
                 player.SendMessage(
                     "Example usage:\n/class get warrior\n/class get ranger\n/class get mage\n/class get summoner",
-                    Color.LightCyan
+                    Color.Cyan
                 );
                 return;
             }
@@ -373,8 +427,14 @@ namespace ForceClass
             {
                 // Prevent minion summon
                 case PacketTypes.ProjectileNew:
-                    if (!PlayerClasses[player.Account.Name].Contains("SUMMONER"))
+                    var playerClasses = Config.SameAll
+                        ? new List<string> { Config.PrimaryClass, Config.SecondaryClass }
+                        : PlayerClasses[player.Account.Name];
+
+                    if (!playerClasses.Contains("SUMMONER"))
+                    {
                         PreventMinion(args, player);
+                    }
                     break;
 
                 case PacketTypes.NpcStrike:
@@ -416,7 +476,9 @@ namespace ForceClass
         private void OnNpcStrike(GetDataEventArgs args, TSPlayer player)
         {
             // Return if just using non weapon tools
-            List<string> classes = PlayerClasses[player.Account.Name];
+            List<string> classes = Config.SameAll
+                ? new List<string>() { Config.PrimaryClass, Config.SecondaryClass }
+                : PlayerClasses[player.Account.Name];
             Item selecteditem = player.SelectedItem;
             if (
                 selecteditem.pick > 0
@@ -462,7 +524,7 @@ namespace ForceClass
                 {
                     SendMessage(
                         player,
-                        $"You can't use this weapon as [{ClassColors[classes[0]]}][{ClassColors[classes[1]]}]",
+                        $"You can't use this weapon as {ClassColors[classes[0]]}{ClassColors[classes[1]]}",
                         Color.Red
                     );
                 }

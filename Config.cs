@@ -6,8 +6,14 @@ namespace ForceClass;
 public class Config
 {
     public bool Enabled = true;
+    public bool SameAll = false;
+    public string PrimaryClass = "WARRIOR";
+    public string SecondaryClass = "NONE";
     public int PunishDuration = 2;
     public int ErrorMessageInterval = 5;
+
+    public string INSTRUCTIONS =
+        "// Valid classes are WARRIOR, RANGER, MAGE, SUMMONER, SUPREME, or NONE. Case insensitive. Classes will be automatically set to default if there is a typo.";
 
     public Config Load()
     {
