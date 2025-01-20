@@ -504,30 +504,30 @@ namespace ForceClass
                 args.Handled = true;
                 player.SetBuff(149, Config.PunishDuration * 60);
 
-                if (classes[0] == "NONE")
+                if (!Config.SameAll && classes[0] == "NONE")
                 {
                     SendMessage(
                         player,
                         "You haven't chosen a primary class yet! Type '/class' for more info.",
                         Color.Red
                     );
+                    return;
                 }
-                else if (classes[1] == "NONE")
+                if (!Config.SameAll && classes[1] == "NONE")
                 {
                     SendMessage(
                         player,
                         $"You haven't chosen a secondary class yet! Type '/class get' for more info.",
                         Color.Red
                     );
+                    return;
                 }
-                else
-                {
-                    SendMessage(
-                        player,
-                        $"You can't use this weapon as {ClassColors[classes[0]]}{ClassColors[classes[1]]}",
-                        Color.Red
-                    );
-                }
+
+                SendMessage(
+                    player,
+                    $"You can't use this weapon as {ClassColors[classes[0]]}{ClassColors[classes[1]]}",
+                    Color.Red
+                );
             }
         }
 
