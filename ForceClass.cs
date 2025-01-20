@@ -227,6 +227,12 @@ namespace ForceClass
                         $"{name}{(isOnline != "" ? $"({isOnline})" : "")} - [{PlayerClasses[name][0]}]{(PlayerClasses[name][0] == "SUPREME" ? "" : $"[{PlayerClasses[name][1]}]")}"
                     );
                 }
+                if (strings.Count == 1)
+                    strings = new List<string>() { "No recent logins." };
+                if (Config.SameAll)
+                    strings.Add(
+                        $"---\nConfig.SameAll is True\nClasses: [{Config.PrimaryClass}][{Config.SecondaryClass}]"
+                    );
                 TShock.Log.ConsoleInfo(string.Join("\n", strings));
                 return;
             }
