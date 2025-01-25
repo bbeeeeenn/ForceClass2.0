@@ -9,6 +9,81 @@ public class Config
     public bool SameAll = false;
     public string PrimaryClass = "WARRIOR";
     public string SecondaryClass = "NONE";
+    public Dictionary<string, List<Dictionary<string, int>>> StartingWeapons = new()
+    {
+        {
+            "WARRIOR",
+            new List<Dictionary<string, int>>()
+            {
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.BatBat },
+                    { "prefixID", Terraria.ID.PrefixID.Legendary },
+                    { "stack", 1 },
+                },
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.FeralClaws },
+                    { "prefixID", Terraria.ID.PrefixID.Violent },
+                    { "stack", 1 },
+                },
+            }
+        },
+        {
+            "RANGER",
+            new List<Dictionary<string, int>>()
+            {
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.EndlessMusketPouch },
+                    { "prefixID", 0 },
+                    { "stack", 1 },
+                },
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.EndlessQuiver },
+                    { "prefixID", 0 },
+                    { "stack", 1 },
+                },
+            }
+        },
+        {
+            "MAGE",
+            new List<Dictionary<string, int>>()
+            {
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.ManaFlower },
+                    { "prefixID", Terraria.ID.PrefixID.Arcane },
+                    { "stack", 1 },
+                },
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.LesserManaPotion },
+                    { "prefixID", 0 },
+                    { "stack", 999 },
+                },
+            }
+        },
+        {
+            "SUMMONER",
+            new List<Dictionary<string, int>>()
+            {
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.FlinxStaff },
+                    { "prefixID", Terraria.ID.PrefixID.Mythical },
+                    { "stack", 1 },
+                },
+                new()
+                {
+                    { "netID", Terraria.ID.ItemID.FlinxFurCoat },
+                    { "prefixID", 0 },
+                    { "stack", 1 },
+                },
+            }
+        },
+    };
     public int PunishDuration = 2;
     public int ErrorMessageInterval = 5;
 

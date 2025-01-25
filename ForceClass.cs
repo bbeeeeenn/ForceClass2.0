@@ -22,8 +22,9 @@ namespace ForceClass
         #endregion
         private readonly List<string> CommandInstructions = new()
         {
-            "/class get <class> - to get a class.\nYou can have 2 classes: Primary and Secondary.",
-            "/class all - to see the classes of all currently online players",
+            ">- Instructions -<",
+            "[c/ffffff:/class get <class>] - to get a class.\nYou can have 2 classes: Primary and Secondary.",
+            "[c/ffffff:/class all] - to see the classes of all currently online players",
             "Available Classes:",
             "   [c/de881f:WARRIOR] - for Melee weapons.",
             "   [c/1ee3b2:RANGER] - for Bows, Guns, and Throwables.",
@@ -214,7 +215,14 @@ namespace ForceClass
         private void OnCommand(CommandArgs args)
         {
             TSPlayer player = args.Player;
-            if (player == null || !player.Active)
+            if (player == null)
+                return;
+            if (!Config.Enabled)
+            {
+                player.SendInfoMessage("Currently disabled.");
+                return;
+            }
+            if (!player.RealPlayer)
             // For the Console
             {
                 List<string> strings = new() { "Player Classes:" };
@@ -233,14 +241,11 @@ namespace ForceClass
                     strings.Add(
                         $"---\nConfig.SameAll is True\nClasses: [{Config.PrimaryClass}][{Config.SecondaryClass}]"
                     );
-                TShock.Log.ConsoleInfo(string.Join("\n", strings));
+                player.SendInfoMessage(string.Join("\n", strings));
                 return;
             }
-            if (!Config.Enabled)
-            {
-                player.SendInfoMessage("Currently disabled.");
+            if (!player.Active)
                 return;
-            }
             if (Config.SameAll)
             {
                 player.SendMessage(
@@ -352,6 +357,7 @@ namespace ForceClass
                 );
                 PlayerClasses[player.Account.Name][0] = classwanted;
                 player.SendSuccessMessage($"Successfully set Primary class to {classwanted}!");
+                GiveStarterItems(player, classwanted);
                 return;
             }
             if (!hasSecondary)
@@ -373,10 +379,12 @@ namespace ForceClass
                 );
                 PlayerClasses[player.Account.Name][1] = classwanted;
                 player.SendSuccessMessage($"Successfully set Secondary class to {classwanted}!");
+                GiveStarterItems(player, classwanted);
                 return;
             }
             player.SendErrorMessage("You already have 2 classes.");
         }
+
         #endregion
 
         #region Restrict Actions
@@ -537,6 +545,7 @@ namespace ForceClass
             }
         }
 
+        #endregion
         private void SendMessage(TSPlayer player, string message, Color color)
         {
             if (
@@ -549,6 +558,29 @@ namespace ForceClass
                 player.SendMessage(message, color);
             }
         }
-        #endregion
+
+        private static void GiveStarterItems(TSPlayer player, string classwanted)
+        {
+            try
+            {
+                List<Dictionary<string, int>> ClassStarters = Config.StartingWeapons[classwanted];
+                foreach (Dictionary<string, int> item in ClassStarters)
+                {
+                    int netID = item["netID"];
+                    int prefixID = item["prefixID"];
+                    int stack = item["stack"];
+                    player.GiveItem(netID, stack, prefixID);
+                }
+                player.SendMessage(
+                    $"The {classwanted} spirits have blessed you with {string.Join("", ClassStarters.Select(item => $"[i/{(item["stack"] > 1 ? "s" + item["stack"] : "p" + item["prefixID"])}:{item["netID"]}]"))}!",
+                    Color.Cyan
+                );
+            }
+            catch (Exception ex)
+            {
+                player.SendErrorMessage("Something went wrong.\nFailed to give starting items.");
+                TShock.Log.ConsoleError(ex.Message);
+            }
+        }
     }
 }
