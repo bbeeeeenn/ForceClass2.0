@@ -124,7 +124,7 @@ namespace ForceClass
                 }
                 else
                 {
-                    TShock.Utils.Broadcast($"Players are now in their own classes!", Color.Cyan);
+                    TShock.Utils.Broadcast("Players are now in their own classes!", Color.Cyan);
                 }
             }
             if (
@@ -249,7 +249,7 @@ namespace ForceClass
             if (Config.SameAll)
             {
                 player.SendMessage(
-                    $"All players are force to be {ClassColors[Config.PrimaryClass]}{ClassColors[Config.SecondaryClass]}!",
+                    $"All players are forced to be {ClassColors[Config.PrimaryClass]}{ClassColors[Config.SecondaryClass]}!",
                     Color.Cyan
                 );
                 if (PlayerClasses[player.Account.Name].Contains("SUPREME"))
@@ -261,7 +261,7 @@ namespace ForceClass
             }
             if (!player.IsLoggedIn)
             {
-                player.SendErrorMessage("You must login first!");
+                player.SendErrorMessage("You must log in first!");
                 return;
             }
 
